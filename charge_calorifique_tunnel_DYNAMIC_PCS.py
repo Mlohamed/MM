@@ -1,4 +1,3 @@
-
 import pandas as pd
 import streamlit as st
 from io import BytesIO
@@ -21,24 +20,23 @@ pcs_reference = {
     "Bois": 17
 }
 
-# Formulaire de saisie
-elements = []
-st.subheader("Ajouter un élément")
+# Sélection du matériau avant le formulaire
+st.subheader("🔍 Sélection du matériau")
+pcs_material = st.selectbox("Matériau (pour PCS par défaut)", ["-- Aucun --"] + list(pcs_reference.keys()))
+default_pcs = pcs_reference.get(pcs_material, 0.0)
+
+if pcs_material != "-- Aucun --":
+    st.markdown(f"**PCS suggéré : `{default_pcs} MJ/kg`**")
+
+# Formulaire d'ajout
+st.subheader("🧾 Ajouter un élément")
 
 with st.form("element_form"):
     element = st.text_input("Nom de l'élément", "Câble électrique")
     unite = st.selectbox("Unité de mesure", ["m", "m²"])
     quantite = st.number_input("Quantité (longueur ou surface)", min_value=0.0, step=1.0)
     masse = st.number_input("Masse linéaire ou surfacique (kg/unité)", min_value=0.0, step=0.1)
-    
-    pcs_material = st.selectbox("Matériau (pour PCS par défaut)", ["-- Aucun --"] + list(pcs_reference.keys()))
-    default_pcs = pcs_reference.get(pcs_material, 0.0)
-    
-    if pcs_material != "-- Aucun --":
-        st.markdown(f"**🔎 PCS proposé pour ce matériau : `{default_pcs} MJ/kg`**")
-
-    pcs = st.number_input("Pouvoir calorifique supérieur (MJ/kg)", min_value=0.0, step=0.5, value=float(default_pcs))
-
+    pcs = st.number_input("Pouvoir calorifique supérieur (MJ/kg)", min_value=0.0, step=0.5, value=default_pcs)
     submit = st.form_submit_button("Ajouter")
 
     if submit and element:
@@ -78,3 +76,4 @@ if "elements" in st.session_state and st.session_state["elements"]:
     )
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
+
