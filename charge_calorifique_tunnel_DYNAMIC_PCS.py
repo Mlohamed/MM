@@ -36,7 +36,7 @@ with st.form("element_form"):
     unite = st.selectbox("Unité de mesure", ["m", "m²"])
     quantite = st.number_input("Quantité (longueur ou surface)", min_value=0.0, step=1.0)
     masse = st.number_input("Masse linéaire ou surfacique (kg/unité)", min_value=0.0, step=0.1)
-    pcs = st.number_input("Pouvoir calorifique supérieur (MJ/kg)", min_value=0.0, step=0.5, value=default_pcs)
+    pcs = st.number_input("Pouvoir calorifique supérieur (MJ/kg)", min_value=0.0, step=0.5, value=float(default_pcs))
     submit = st.form_submit_button("Ajouter")
 
     if submit and element:
