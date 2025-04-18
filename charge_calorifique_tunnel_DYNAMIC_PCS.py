@@ -25,7 +25,7 @@ pcs_reference = {
     "Plaque Geproc": 0,
     "Polystyrène": 39,
     "MDF": 18,
-    "Gyproc RF (rose)": 1
+    "Gyproc RF (rose)": 0.1
 }
 
 # Sélection du matériau avant le formulaire
