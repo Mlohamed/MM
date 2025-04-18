@@ -78,12 +78,12 @@ if "elements" in st.session_state and st.session_state["elements"]:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    # HRR Curve - Courbe quadratique avec extinction
+    # Choix de la durée pour la courbe HRR
     st.subheader("📈 Courbe HRR (Heat Release Rate)")
-    duree_totale = 1800  # 30 minutes
-    t_monte = 600
-    t_plateau = 600
-    t_descente = 600
+    duree_totale = st.selectbox("Durée du feu pour la courbe HRR", [900, 1800, 3600], format_func=lambda x: f"{x//60} minutes")
+    t_monte = duree_totale // 3
+    t_plateau = duree_totale // 3
+    t_descente = duree_totale // 3
 
     t1 = np.linspace(0, t_monte, 200)
     alpha = 0.012
@@ -100,11 +100,11 @@ if "elements" in st.session_state and st.session_state["elements"]:
     hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
 
     energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000  # MJ
-    st.markdown(f"**Courbe HRR simulée : durée 30 min, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
+    st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(t_total, hrr_total, color='purple')
-    ax.set_title("Courbe HRR quadratique avec plateau et extinction (30 min)")
+    ax.set_title(f"Courbe HRR quadratique avec plateau et extinction ({duree_totale // 60} min)")
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("HRR (kW)")
     ax.grid(True)
