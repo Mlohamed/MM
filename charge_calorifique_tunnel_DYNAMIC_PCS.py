@@ -6,7 +6,7 @@ import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_By Mabchour")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB ")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, couvercles FRP, etc.),
 ainsi que de générer une courbe HRR (Heat Release Rate) de forme quadratique pour la simulation.
