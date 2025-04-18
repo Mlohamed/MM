@@ -80,7 +80,7 @@ if "elements" in st.session_state and st.session_state["elements"]:
 
     # Choix de la durée pour la courbe HRR
     st.subheader("📈 Courbe HRR (Heat Release Rate)")
-    duree_totale = st.selectbox("Durée du feu pour la courbe HRR", [900, 1800, 3600], format_func=lambda x: f"{x//60} minutes")
+    duree_totale = st.selectbox("Durée de combustion pour la courbe HRR", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
 
     # Choix de alpha
     st.markdown("**Sélectionnez le type de croissance du feu :**")
@@ -103,25 +103,26 @@ if "elements" in st.session_state and st.session_state["elements"]:
 
     t1 = np.linspace(0, t_monte, 200)
     hrr_monte = alpha * t1**2
-    HRRmax = hrr_monte[-1]
+    HRRmax = hrr_monte[-1] / 1000  # en MW
 
     t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
-    hrr_plateau = np.ones_like(t2) * HRRmax
+    hrr_plateau = np.ones_like(t2) * HRRmax * 1000
 
     t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
-    hrr_descente = np.linspace(HRRmax, 0, len(t3))
+    hrr_descente = np.linspace(HRRmax * 1000, 0, len(t3))
 
     t_total = np.concatenate([t1, t2, t3])
     hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
 
     energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000  # MJ
     st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, α = {alpha}, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
+    st.markdown(f"**Puissance maximale : {HRRmax:.2f} MW**")
 
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(t_total, hrr_total, color='purple')
+    ax.plot(t_total, hrr_total / 1000, color='purple')
     ax.set_title(f"Courbe HRR (α = {alpha}) avec plateau et extinction ({duree_totale // 60} min)")
     ax.set_xlabel("Temps (s)")
-    ax.set_ylabel("HRR (kW)")
+    ax.set_ylabel("HRR (MW)")
     ax.grid(True)
     st.pyplot(fig)
 else:
