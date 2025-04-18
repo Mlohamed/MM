@@ -6,7 +6,7 @@ import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique en tunnel")
+st.title("🔥 Calcul de la charge calorifique HRR")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, couvercles FRP, etc.),
 ainsi que de générer une courbe HRR (Heat Release Rate) de forme quadratique pour la simulation.
@@ -22,7 +22,8 @@ pcs_reference = {
     "Bois": 17,
     "Panneau OSB": 18,
     "Panneau OSB 3": 18,
-    "Plaque Geproc": 0
+    "Plaque Geproc": 0,
+    "Polystyrène": 39
 }
 
 # Sélection du matériau avant le formulaire
@@ -129,4 +130,3 @@ if "elements" in st.session_state and st.session_state["elements"]:
     st.pyplot(fig)
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
-    
