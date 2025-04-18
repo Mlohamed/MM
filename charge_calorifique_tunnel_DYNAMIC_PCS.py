@@ -1,12 +1,15 @@
 import pandas as pd
 import streamlit as st
 from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique STIB")
+st.title("🔥 Calcul de la charge calorifique en tunnel")
 st.markdown("""
-Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, couvercles FRP, etc.).
+Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, couvercles FRP, etc.),
+ainsi que de générer une courbe HRR (Heat Release Rate) de forme quadratique pour la simulation.
 """)
 
 # Liste de matériaux avec PCS par défaut (MJ/kg)
@@ -74,6 +77,37 @@ if "elements" in st.session_state and st.session_state["elements"]:
         file_name="charge_calorifique_tunnel.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+    # HRR Curve - Courbe quadratique avec extinction
+    st.subheader("📈 Courbe HRR (Heat Release Rate)")
+    duree_totale = 1800  # 30 minutes
+    t_monte = 600
+    t_plateau = 600
+    t_descente = 600
+
+    t1 = np.linspace(0, t_monte, 200)
+    alpha = 0.012
+    hrr_monte = alpha * t1**2
+    HRRmax = hrr_monte[-1]
+
+    t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
+    hrr_plateau = np.ones_like(t2) * HRRmax
+
+    t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
+    hrr_descente = np.linspace(HRRmax, 0, len(t3))
+
+    t_total = np.concatenate([t1, t2, t3])
+    hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
+
+    energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000  # MJ
+    st.markdown(f"**Courbe HRR simulée : durée 30 min, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(t_total, hrr_total, color='purple')
+    ax.set_title("Courbe HRR quadratique avec plateau et extinction (30 min)")
+    ax.set_xlabel("Temps (s)")
+    ax.set_ylabel("HRR (kW)")
+    ax.grid(True)
+    st.pyplot(fig)
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
-
