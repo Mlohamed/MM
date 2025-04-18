@@ -16,11 +16,13 @@ ainsi que de générer une courbe HRR (Heat Release Rate) de forme quadratique p
 pcs_reference = {
     "Câble PVC": 20,
     "Câble PE": 40,
-    "Câble XLPE": 38,
     "Composite (FRP)": 20,
     "Plastique": 35,
     "Caoutchouc": 30,
-    "Bois": 17
+    "Bois": 17,
+    "Panneau OSB": 18,
+    "Panneau OSB 3": 18,
+    "Plaque Geproc": 0
 }
 
 # Sélection du matériau avant le formulaire
@@ -85,15 +87,15 @@ if "elements" in st.session_state and st.session_state["elements"]:
     # Choix de alpha
     st.markdown("**Sélectionnez le type de croissance du feu :**")
     alpha_choice = st.radio("Type de croissance", [
-        "Moyen (α = 0.012)",
-        "Rapide (α = 0.047)",
-        "Ultra-rapide (α = 0.105)"
+        "Moyen (α = 0.012 kW/s²)",
+        "Rapide (α = 0.047 kW/s²)",
+        "Ultra-rapide (α = 0.105 kW/s²)"
     ])
 
     alpha_dict = {
-        "Moyen (α = 0.012)": 0.012,
-        "Rapide (α = 0.047)": 0.047,
-        "Ultra-rapide (α = 0.105)": 0.105
+        "Moyen (α = 0.012 kW/s²)": 0.012,
+        "Rapide (α = 0.047 kW/s²)": 0.047,
+        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
     }
     alpha = alpha_dict[alpha_choice]
 
@@ -115,15 +117,16 @@ if "elements" in st.session_state and st.session_state["elements"]:
     hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
 
     energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000  # MJ
-    st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, α = {alpha}, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
+    st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, α = {alpha} kW/s², énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
     st.markdown(f"**Puissance maximale : {HRRmax:.2f} MW**")
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(t_total, hrr_total / 1000, color='purple')
-    ax.set_title(f"Courbe HRR (α = {alpha}) avec plateau et extinction ({duree_totale // 60} min)")
+    ax.set_title(f"Courbe HRR (α = {alpha} kW/s²) avec plateau et extinction ({duree_totale // 60} min)")
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("HRR (MW)")
     ax.grid(True)
     st.pyplot(fig)
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
+    
