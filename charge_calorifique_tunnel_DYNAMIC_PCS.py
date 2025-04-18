@@ -6,7 +6,7 @@ import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR")
+st.title("🔥 Calcul de la charge calorifique en tunnel")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, couvercles FRP, etc.),
 ainsi que de générer une courbe HRR (Heat Release Rate) de forme quadratique pour la simulation.
@@ -55,7 +55,7 @@ with st.form("element_form"):
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
-    df["Équiv. litres essence"] = (df["Charge calorifique (MJ)"] / 34).round(0).astype(int)
+    df["Équiv. litres essence"] = (df["Charge calorifique (MJ)"].round(2) / 34).round(0).astype(int)
 
     st.subheader("🧮 Résultat")
     st.dataframe(df, use_container_width=True)
@@ -81,12 +81,27 @@ if "elements" in st.session_state and st.session_state["elements"]:
     # Choix de la durée pour la courbe HRR
     st.subheader("📈 Courbe HRR (Heat Release Rate)")
     duree_totale = st.selectbox("Durée du feu pour la courbe HRR", [900, 1800, 3600], format_func=lambda x: f"{x//60} minutes")
+
+    # Choix de alpha
+    st.markdown("**Sélectionnez le type de croissance du feu :**")
+    alpha_choice = st.radio("Type de croissance", [
+        "Moyen (α = 0.012)",
+        "Rapide (α = 0.047)",
+        "Ultra-rapide (α = 0.105)"
+    ])
+
+    alpha_dict = {
+        "Moyen (α = 0.012)": 0.012,
+        "Rapide (α = 0.047)": 0.047,
+        "Ultra-rapide (α = 0.105)": 0.105
+    }
+    alpha = alpha_dict[alpha_choice]
+
     t_monte = duree_totale // 3
     t_plateau = duree_totale // 3
     t_descente = duree_totale // 3
 
     t1 = np.linspace(0, t_monte, 200)
-    alpha = 0.012
     hrr_monte = alpha * t1**2
     HRRmax = hrr_monte[-1]
 
@@ -100,11 +115,11 @@ if "elements" in st.session_state and st.session_state["elements"]:
     hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
 
     energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000  # MJ
-    st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
+    st.markdown(f"**Courbe HRR simulée : durée {duree_totale // 60} min, α = {alpha}, énergie dégagée ≈ {energie_totale_hrr:.0f} MJ**")
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(t_total, hrr_total, color='purple')
-    ax.set_title(f"Courbe HRR quadratique avec plateau et extinction ({duree_totale // 60} min)")
+    ax.set_title(f"Courbe HRR (α = {alpha}) avec plateau et extinction ({duree_totale // 60} min)")
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("HRR (kW)")
     ax.grid(True)
