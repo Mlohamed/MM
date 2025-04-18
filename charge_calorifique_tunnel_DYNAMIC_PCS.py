@@ -40,7 +40,8 @@ if pcs_material != "-- Aucun --":
 st.subheader("🧾 Ajouter un élément")
 
 with st.form("element_form"):
-    element = st.text_input("Nom de l'élément", "Câble électrique")
+    default_element_name = pcs_material if pcs_material != "-- Aucun --" else "Câble électrique"
+    element = st.text_input("Nom de l'élément", default_element_name)
     unite = st.selectbox("Unité de mesure", ["m", "m²"])
     quantite = st.number_input("Quantité (longueur ou surface)", min_value=0.0, step=1.0)
     masse = st.number_input("Masse linéaire ou surfacique (kg/unité)", min_value=0.0, step=0.1)
