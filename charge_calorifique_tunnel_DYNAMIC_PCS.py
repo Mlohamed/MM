@@ -46,5 +46,5 @@ else:
 # Suite à développer : sélection matériau, distance, jauge de risque, calculs, courbes, etc.
 ```
 
-Tu peux maintenant afficher dynamiquement le nom du projet dans l'application.
+# Tu peux maintenant afficher dynamiquement le nom du projet dans l'application.
 Souhaites-tu que ce nom soit également ajouté dans l'en-tête du fichier Excel ou sur les graphes HRR ?
