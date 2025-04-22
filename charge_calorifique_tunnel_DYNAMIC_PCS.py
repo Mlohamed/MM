@@ -6,7 +6,7 @@ import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB V1")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB V2")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
 ainsi que de générer une courbe HRR (Heat Release Rate) et d'évaluer la contribution au feu selon la distance d'exposition.
@@ -109,7 +109,7 @@ with st.form("element_form"):
             "PCS (MJ/kg)": pcs
         })
 
-# Affichage résultats
+# Résultats
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
@@ -123,20 +123,33 @@ if "elements" in st.session_state and st.session_state["elements"]:
     st.markdown(f"**Total énergie : {total_mj:.2f} MJ**")
     st.markdown(f"**Équivalent essence : {total_l} litres**")
 
-    # Export Excel
     output = BytesIO()
     df.to_excel(output, index=False, engine='openpyxl')
     st.download_button("📥 Télécharger Excel", output.getvalue(), "charge_calorifique_tunnel.xlsx")
 
-    # HRR Curve
+    # Courbe HRR avec choix d'alpha
     st.subheader("📈 Courbe HRR simulée")
     duree_totale = st.selectbox("Durée de feu", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
+
+    alpha_choice = st.radio("Vitesse de croissance du feu", [
+        "Lente (α = 0.004 kW/s²)",
+        "Moyenne (α = 0.012 kW/s²)",
+        "Rapide (α = 0.047 kW/s²)",
+        "Ultra-rapide (α = 0.105 kW/s²)"
+    ])
+    alpha_dict = {
+        "Lente (α = 0.004 kW/s²)": 0.004,
+        "Moyenne (α = 0.012 kW/s²)": 0.012,
+        "Rapide (α = 0.047 kW/s²)": 0.047,
+        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
+    }
+    alpha = alpha_dict[alpha_choice]
+
     t_monte = duree_totale // 3
     t_plateau = duree_totale // 3
     t_descente = duree_totale // 3
 
     t1 = np.linspace(0, t_monte, 200)
-    alpha = 0.012
     hrr_monte = alpha * t1**2
     HRRmax = hrr_monte[-1]
 
@@ -155,7 +168,7 @@ if "elements" in st.session_state and st.session_state["elements"]:
     ax.plot(t_total, hrr_total / 1000, color='purple')
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("HRR (MW)")
-    ax.set_title("Courbe HRR simulée (quadratique)")
+    ax.set_title(f"Courbe HRR ({alpha_choice})")
     ax.grid(True)
     st.pyplot(fig)
 else:
