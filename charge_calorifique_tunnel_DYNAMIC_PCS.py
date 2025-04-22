@@ -47,4 +47,4 @@ else:
 ```
 
 # Tu peux maintenant afficher dynamiquement le nom du projet dans l'application.
-Souhaites-tu que ce nom soit également ajouté dans l'en-tête du fichier Excel ou sur les graphes HRR ?
+# Souhaites-tu que ce nom soit également ajouté dans l'en-tête du fichier Excel ou sur les graphes HRR ?
