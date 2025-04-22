@@ -13,99 +13,89 @@ aussi que de générer une courbe HRR (Heat Release Rate) et d'évaluer la contr
 Vous pouvez également analyser le risque d'inflammation en fonction du flux thermique reçu et simuler une montée en puissance du feu selon plusieurs profils.
 """)
 
-# Matériaux de référence
 materiaux_info = {
-    "Câble PVC": {"pcs": 20, "densite": "~1.2 kg/m", "combustion": "4–6 min", "hrr": "300–500 kW", "inflammation": 5, "flux_critique": 20},
-    "Câble PE": {"pcs": 40, "densite": "~1.0 kg/m", "combustion": "4–8 min", "hrr": "400–800 kW", "inflammation": 4, "flux_critique": 18},
-    "Composite (FRP)": {"pcs": 20, "densite": "4–10 kg/m²", "combustion": "10–20 min", "hrr": "600–1000 kW", "inflammation": 6, "flux_critique": 16},
-    "Plastique": {"pcs": 35, "densite": "variable", "combustion": "5–10 min", "hrr": "500–900 kW", "inflammation": 4, "flux_critique": 15},
-    "Caoutchouc": {"pcs": 30, "densite": "variable", "combustion": "10–15 min", "hrr": "500–700 kW", "inflammation": 6, "flux_critique": 14},
-    "Bois": {"pcs": 17, "densite": "8–15 kg/m²", "combustion": "20–30 min", "hrr": "300–500 kW/m²", "inflammation": 8, "flux_critique": 12},
-    "Panneau OSB": {"pcs": 18, "densite": "10 kg/m²", "combustion": "15–25 min", "hrr": "250–400 kW/m²", "inflammation": 7, "flux_critique": 11},
-    "Panneau OSB 3": {"pcs": 17, "densite": "10–12 kg/m²", "combustion": "15–25 min", "hrr": "300–450 kW/m²", "inflammation": 7, "flux_critique": 11},
-    "Plaque Geproc": {"pcs": 0, "densite": "~10 kg/m²", "combustion": "Non combustible", "hrr": "≈0", "inflammation": 0, "flux_critique": 999},
-    "Polystyrène": {"pcs": 39, "densite": "10–20 kg/m³", "combustion": "3–6 min", "hrr": ">1000 kW/m²", "inflammation": 2, "flux_critique": 10},
-    "MDF": {"pcs": 18, "densite": "12–14 kg/m²", "combustion": "15–25 min", "hrr": "300–400 kW", "inflammation": 7, "flux_critique": 12},
-    "Gyproc RF (rose)": {"pcs": 1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999}
+    "Câble PVC": {"pcs": 20, "densite": "~1.2 kg/m", "combustion": "4–6 min", "hrr": "300–500 kW", "inflammation": 5},
+    "Câble PE": {"pcs": 40, "densite": "~1.0 kg/m", "combustion": "4–8 min", "hrr": "400–800 kW", "inflammation": 4},
+    "Composite (FRP)": {"pcs": 20, "densite": "4–10 kg/m²", "combustion": "10–20 min", "hrr": "600–1000 kW", "inflammation": 6},
+    "Plastique": {"pcs": 35, "densite": "variable", "combustion": "5–10 min", "hrr": "500–900 kW", "inflammation": 4},
+    "Caoutchouc": {"pcs": 30, "densite": "variable", "combustion": "10–15 min", "hrr": "500–700 kW", "inflammation": 6},
+    "Bois": {"pcs": 17, "densite": "8–15 kg/m²", "combustion": "20–30 min", "hrr": "300–500 kW/m²", "inflammation": 8},
+    "Panneau OSB": {"pcs": 18, "densite": "10 kg/m²", "combustion": "15–25 min", "hrr": "250–400 kW/m²", "inflammation": 7},
+    "Panneau OSB 3": {"pcs": 17, "densite": "10–12 kg/m²", "combustion": "15–25 min", "hrr": "300–450 kW/m²", "inflammation": 7},
+    "Plaque Geproc": {"pcs": 0, "densite": "~10 kg/m²", "combustion": "Non combustible", "hrr": "≈0", "inflammation": 0},
+    "Polystyrène": {"pcs": 39, "densite": "10–20 kg/m³", "combustion": "3–6 min", "hrr": ">1000 kW/m²", "inflammation": 2},
+    "MDF": {"pcs": 18, "densite": "12–14 kg/m²", "combustion": "15–25 min", "hrr": "300–400 kW", "inflammation": 7},
+    "Gyproc RF (rose)": {"pcs": 1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10}
 }
 
-# Sidebar
-st.sidebar.header("🔎 Aide et infos")
-st.sidebar.markdown("- [Documentation PCS & HRR (PDF)](https://www.example.com)")
-st.sidebar.markdown("- [Références ISO / NFPA](https://www.nfpa.org)")
-
-# Nom du projet
 st.subheader("👤 Informations utilisateur (facultatif)")
-nom_projet = st.text_input("Votre nom ou projet", "")
-if nom_projet:
-    st.markdown(f"**Projet :** {nom_projet}")
+nom_utilisateur = st.text_input("Votre nom ou projet", "")
+if nom_utilisateur:
+    st.markdown(f"**Projet :** {nom_utilisateur}")
 
-# Sélection matériau
 st.markdown("---")
 st.subheader("🔍 Sélection du matériau")
 material_list = ["-- Aucun --"] + list(materiaux_info.keys())
-selected_material = st.selectbox("Matériau (avec PCS par défaut)", material_list)
+selected_material = st.selectbox("Matériau (avec données par défaut)", material_list)
 
 if selected_material != "-- Aucun --":
     info = materiaux_info[selected_material]
+    st.markdown(f"**PCS :** {info['pcs']} MJ/kg  ")
+    st.markdown(f"**Densité type :** {info['densite']}  ")
+    st.markdown(f"**Durée de combustion typique :** {info['combustion']}  ")
+    st.markdown(f"**HRR max estimé :** {info['hrr']}")
     default_pcs = info['pcs']
-    st.markdown(f"**PCS :** {info['pcs']} MJ/kg")
-    st.markdown(f"**HRR estimé :** {info['hrr']}")
-    st.markdown(f"**Densité :** {info['densite']}")
+    default_element_name = selected_material
 else:
-    default_pcs = 0
+    default_pcs = 0.0
+    default_element_name = "Câble électrique"
 
-# Formulaire
-st.subheader("🧾 Ajouter un élément")
-with st.form("formulaire"):
-    element = st.text_input("Nom de l'élément", selected_material if selected_material != "-- Aucun --" else "")
-    unite = st.selectbox("Unité de mesure", ["m", "m²"])
-    quantite = st.number_input("Quantité (longueur ou surface)", min_value=0.0, step=1.0)
-    masse = st.number_input("Masse linéaire ou surfacique (kg/unité)", min_value=0.0, step=0.1)
-    pcs = st.number_input("Pouvoir calorifique supérieur (MJ/kg)", min_value=0.0, value=float(default_pcs), step=0.5)
-    submit = st.form_submit_button("Ajouter")
+st.subheader("🌡️ Distance par rapport à la source de chaleur")
+distance_m = st.slider("Distance estimée par rapport à la source de feu (m)", 0.5, 5.0, 2.0, step=0.5)
 
-    if submit and element:
-        st.session_state.setdefault("elements", []).append({
-            "Élément": element,
-            "Unité": unite,
-            "Quantité": quantite,
-            "Masse (kg/unité)": masse,
-            "PCS (MJ/kg)": pcs
-        })
+if distance_m <= 1:
+    flux = 30
+    flux_txt = "> 25 kW/m² (inflammation très probable)"
+elif distance_m <= 2:
+    flux = 20
+    flux_txt = "15–25 kW/m² (inflammation probable après quelques minutes)"
+elif distance_m <= 3:
+    flux = 12
+    flux_txt = "10–15 kW/m² (inflammation possible à long terme)"
+else:
+    flux = 8
+    flux_txt = "< 10 kW/m² (peu de probabilité d’inflammation)"
 
-# Affichage des résultats
-if "elements" in st.session_state and st.session_state["elements"]:
-    df = pd.DataFrame(st.session_state["elements"])
-    df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
-    st.subheader("📊 Résultat")
-    st.dataframe(df)
+st.markdown(f"**Flux thermique estimé à {distance_m} m :** {flux_txt}")
 
-    total_mj = df["Charge calorifique (MJ)"].sum()
-    equivalent_essence = int(total_mj / 34)
-    st.markdown(f"**🔹 Charge calorifique totale : {total_mj:.2f} MJ**")
-    st.markdown(f"**🔹 Équivalent essence : {equivalent_essence} litres**")
+if selected_material != "-- Aucun --":
+    sensib = info['inflammation']
+    score = round(flux * (10 - sensib) / 10)
+    if score >= 20:
+        commentaire = "🔥 Risque d'inflammation élevé (court terme)"
+    elif score >= 10:
+        commentaire = "⚠️ Risque d'inflammation modéré"
+    elif score > 0:
+        commentaire = "🟡 Risque faible mais présent"
+    else:
+        commentaire = "✅ Risque négligeable ou matériau incombustible"
+    st.markdown(f"**Analyse d'inflammation :** {commentaire}")
 
-    # Sélection du profil alpha
-    st.subheader("🔥 Génération de la courbe HRR (Quadratique)")
-    alpha_option = st.selectbox("Profil de feu (vitesse de croissance)", ["Lent (α = 0.00293)", "Moyen (α = 0.012)", "Rapide (α = 0.0469)", "Ultra-rapide (α = 0.1876)"])
-    alpha_val = float(alpha_option.split("=")[-1].replace(")", "").strip())
+# Choix du profil alpha et durée pour courbe HRR
+st.subheader("📈 Simulation HRR (Heat Release Rate)")
+alpha_choice = st.selectbox("Profil de croissance du feu (α)", ["Lent (0.00293)", "Moyen (0.0117)", "Rapide (0.0469)", "Ultra rapide (0.1876)"])
+duree_feu = st.slider("Durée du feu pour la courbe HRR (min)", 5, 30, 10)
 
-    duree = st.slider("Durée du feu pour la courbe HRR (minutes)", 5, 30, 10)
-    duree_sec = duree * 60
-    t = np.linspace(0, duree_sec, 300)
-    hrr = alpha_val * t**2
-    hrr = np.minimum(hrr, total_mj * 1000 / duree_sec)  # limitation par énergie totale
+d_alpha = {
+    "Lent (0.00293)": 0.00293,
+    "Moyen (0.0117)": 0.0117,
+    "Rapide (0.0469)": 0.0469,
+    "Ultra rapide (0.1876)": 0.1876
+}
 
-    fig, ax = plt.subplots()
-    ax.plot(t/60, hrr / 1000, label=f"Courbe HRR (α = {alpha_val})")
-    ax.set_xlabel("Temps (min)")
-    ax.set_ylabel("HRR (MW)")
-    ax.set_title("Courbe de puissance calorifique libérée")
-    ax.legend()
-    st.pyplot(fig)
+alpha_val = d_alpha[alpha_choice]
 
-    # Export Excel
-    output = BytesIO()
-    df.to_excel(output, index=False, engine='openpyxl')
-    st.download_button("📥 Télécharger les résultats Excel", data=output.getvalue(), file_name="resultats_calorifique.xlsx")
+time_s = np.arange(0, duree_feu * 60 + 1, 1)
+hrr_curve = alpha_val * time_s**2
+
+st.line_chart(pd.DataFrame({"HRR (kW)": hrr_curve}, index=time_s))
