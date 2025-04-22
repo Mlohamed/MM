@@ -6,7 +6,7 @@ import numpy as np
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB V2")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB V1")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
 ainsi que de générer une courbe HRR (Heat Release Rate) et d'évaluer la contribution au feu selon la distance d'exposition.
@@ -43,8 +43,11 @@ if nom_utilisateur:
 else:
     st.markdown("**Projet :** _(non spécifié)_")
 
-# Suite à développer : sélection matériau, distance, jauge de risque, calculs, courbes, etc.
+# Affichage du reste de l'application ici
+st.markdown("""
+---
 
+⬇️ Vous pouvez maintenant sélectionner les matériaux et entrer les paramètres pour calculer la charge calorifique et générer les courbes.
 
-# Tu peux maintenant afficher dynamiquement le nom du projet dans l'application.
-# Souhaites-tu que ce nom soit également ajouté dans l'en-tête du fichier Excel ou sur les graphes HRR ?
+👉 Continuez ci-dessous.
+""")
