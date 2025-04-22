@@ -9,16 +9,9 @@ st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="c
 st.title("🔥 Calcul de la charge calorifique HRR_STIB V3")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
-ainsi que de générer une courbe HRR (Heat Release Rate) et d'évaluer la contribution au feu selon la distance d'exposition.
-Vous pouvez également analyser le risque d'inflammation en fonction du flux thermique reçu, nommer votre projet, et visualiser plusieurs unités de sortie.
+aussi que de générer une courbe HRR (Heat Release Rate) et d’évaluer la contribution au feu selon la distance d'exposition. Vous pouvez également analyser le risque d'inflammation
+en fonction du flux thermique reçu, et nommer votre projet pour les exports.
 """)
-
-# Nom du projet
-st.subheader("🧠 Nom du projet")
-nom_projet = st.text_input("Nom de l'analyse ou du projet", "")
-if nom_projet:
-    st.markdown(f"**Projet :** {nom_projet}")
-    st.info("\U0001F4C4 Vous pouvez maintenant sélectionner les matériaux et entrer les paramètres pour calculer la charge calorifique et générer les courbes.\n\n👉 Continuez ci-dessous.")
 
 # Liste enrichie de matériaux avec données
 materiaux_info = {
@@ -36,6 +29,7 @@ materiaux_info = {
     "Gyproc RF (rose)": {"pcs": 1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10}
 }
 
+# Sélection du matériau
 st.subheader("🔍 Sélection du matériau")
 material_list = ["-- Aucun --"] + list(materiaux_info.keys())
 selected_material = st.selectbox("Matériau (avec données par défaut)", material_list)
@@ -52,25 +46,30 @@ else:
     default_pcs = 0.0
     default_element_name = "Câble électrique"
 
+# Distance et flux thermique
 st.subheader("🌡️ Distance par rapport à la source de chaleur")
 distance_m = st.slider("Distance estimée (m)", 0.5, 5.0, 2.0, step=0.5)
+
 if distance_m <= 1:
     flux = 30
     flux_txt = "> 25 kW/m² (inflammation très probable)"
 elif distance_m <= 2:
     flux = 20
-    flux_txt = "15–25 kW/m² (inflammation probable)"
+    flux_txt = "15–25 kW/m² (inflammation probable après quelques minutes)"
 elif distance_m <= 3:
     flux = 12
-    flux_txt = "10–15 kW/m² (inflammation possible)"
+    flux_txt = "10–15 kW/m² (inflammation possible à long terme)"
 else:
     flux = 8
-    flux_txt = "< 10 kW/m² (peu de risque)"
-st.markdown(f"**Flux thermique estimé :** ~ {flux} kW/m²")
+    flux_txt = "< 10 kW/m² (peu de probabilité d’inflammation)"
 
+st.markdown(f"**Flux thermique estimé :** {flux_txt}")
+
+# Estimation du risque
 if selected_material != "-- Aucun --":
     sensib = info['inflammation']
     score = round(flux * (10 - sensib) / 10)
+
     if score >= 20:
         commentaire = "🔴 Risque élevé d'inflammation"
     elif score >= 10:
@@ -79,8 +78,10 @@ if selected_material != "-- Aucun --":
         commentaire = "🟡 Risque faible"
     else:
         commentaire = "🟢 Risque négligeable"
+
     st.markdown(f"**Analyse :** {commentaire}")
 
+# Formulaire d'ajout
 st.subheader("🧾 Ajouter un élément")
 with st.form("element_form"):
     element = st.text_input("Nom de l'élément", default_element_name)
@@ -99,24 +100,69 @@ with st.form("element_form"):
             "PCS (MJ/kg)": pcs
         })
 
+# Résultats
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
     df["Équiv. essence (L)"] = (df["Charge calorifique (MJ)"] / 34).round(0).astype(int)
-    df["Énergie (kWh)"] = (df["Charge calorifique (MJ)"] * 0.278).round(1)
 
-    st.subheader("🧮 Résultats")
+    st.subheader("📊 Résultats")
     st.dataframe(df, use_container_width=True)
 
     total_mj = df["Charge calorifique (MJ)"].sum()
-    total_kwh = df["Énergie (kWh)"].sum()
     total_l = df["Équiv. essence (L)"].sum()
-    st.markdown(f"**Total énergie : {total_mj:.2f} MJ**  ")
-    st.markdown(f"**Soit : {total_kwh:.1f} kWh**  ")
+    total_kwh = round(total_mj / 3.6, 1)
+    st.markdown(f"**Total énergie : {total_mj:.2f} MJ**")
+    st.markdown(f"**Soit : {total_kwh} kWh**")
     st.markdown(f"**Équivalent essence : {total_l} litres**")
 
     output = BytesIO()
     df.to_excel(output, index=False, engine='openpyxl')
     st.download_button("📥 Télécharger Excel", output.getvalue(), "charge_calorifique_tunnel.xlsx")
+
+    # Courbe HRR
+    st.subheader("📈 Courbe HRR simulée")
+    duree_totale = st.selectbox("Durée de feu", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
+
+    alpha_choice = st.radio("Vitesse de croissance du feu", [
+        "Lente (α = 0.004 kW/s²)",
+        "Moyenne (α = 0.012 kW/s²)",
+        "Rapide (α = 0.047 kW/s²)",
+        "Ultra-rapide (α = 0.105 kW/s²)"
+    ])
+    alpha_dict = {
+        "Lente (α = 0.004 kW/s²)": 0.004,
+        "Moyenne (α = 0.012 kW/s²)": 0.012,
+        "Rapide (α = 0.047 kW/s²)": 0.047,
+        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
+    }
+    alpha = alpha_dict[alpha_choice]
+
+    t_monte = duree_totale // 3
+    t_plateau = duree_totale // 3
+    t_descente = duree_totale // 3
+
+    t1 = np.linspace(0, t_monte, 200)
+    hrr_monte = alpha * t1**2
+    HRRmax = hrr_monte[-1]
+
+    t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
+    hrr_plateau = np.ones_like(t2) * HRRmax
+    t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
+    hrr_descente = np.linspace(HRRmax, 0, len(t3))
+
+    t_total = np.concatenate([t1, t2, t3])
+    hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
+
+    energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000
+    st.markdown(f"**Puissance max : {HRRmax/1000:.2f} MW** – Énergie ≈ {energie_totale_hrr:.0f} MJ")
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(t_total, hrr_total / 1000, color='purple')
+    ax.set_xlabel("Temps (s)")
+    ax.set_ylabel("HRR (MW)")
+    ax.set_title(f"Courbe HRR ({alpha_choice})")
+    ax.grid(True)
+    st.pyplot(fig)
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
