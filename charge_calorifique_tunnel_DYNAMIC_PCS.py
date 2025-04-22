@@ -10,7 +10,7 @@ st.title("🔥 Calcul de la charge calorifique HRR_STIB V3")
 st.markdown("""
 Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
 aussi que de générer une courbe HRR (Heat Release Rate) et d’évaluer la contribution au feu selon la distance d'exposition. Vous pouvez également analyser le risque d'inflammation
-en fonction du flux thermique reçu, et nommer votre projet pour les exports.
+en fonction du flux thermique reçu.
 """)
 
 # Liste enrichie de matériaux avec données
