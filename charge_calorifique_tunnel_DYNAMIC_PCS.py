@@ -8,12 +8,12 @@ st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="c
 
 st.title("🔥 Calcul de la charge calorifique HRR_STIB V3.1")
 st.markdown("""
-Ce calculateur vous permet d'estimer l'énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
-ainsi que de générer une courbe HRR (Heat Release Rate) et d'évaluer la contribution au feu selon la distance d'exposition.
+Ce calculateur vous permet d'estimer l’énergie thermique libérée en cas d'incendie pour différents éléments installés dans un tunnel (câbles, cloisons, revêtements, etc.),
+aussi que de générer une courbe HRR (Heat Release Rate) et d’évaluer la contribution au feu selon la distance d'exposition.
 Vous pouvez également analyser le risque d'inflammation en fonction du flux thermique reçu, selon un seuil critique propre au matériau.
 """)
 
-# Liste enrichie de matériaux avec données
+# Matériaux enrichis avec seuil critique
 materiaux_info = {
     "Câble PVC": {"pcs": 20, "densite": "~1.2 kg/m", "combustion": "4–6 min", "hrr": "300–500 kW", "inflammation": 5, "flux_critique": 20},
     "Câble PE": {"pcs": 40, "densite": "~1.0 kg/m", "combustion": "4–8 min", "hrr": "400–800 kW", "inflammation": 4, "flux_critique": 18},
@@ -29,14 +29,13 @@ materiaux_info = {
     "Gyproc RF (rose)": {"pcs": 1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999}
 }
 
-# Sidebar - Lien vers documentation ou fiche
-st.sidebar.header("🔎 Aide et infos")
-st.sidebar.markdown("- [Documentation PCS & HRR (PDF)](https://www.example.com)")
-st.sidebar.markdown("- [Références ISO / NFPA](https://www.nfpa.org)")
-
-# Informations utilisateur
+# 📌 Nom du projet (affiché + utilisé plus tard)
 st.subheader("🧠 Nom du projet")
 project_name = st.text_input("Nom de l'analyse ou du projet", "")
 if project_name:
     st.markdown(f"**Projet :** {project_name}")
-    st.info("🔽 Vous pouvez maintenant sélectionner les matériaux et entrer les paramètres pour calculer la charge calorifique et générer les courbes.\n\n👉 Continuez ci-dessous.")
+    st.info("\n\n🔽 Vous pouvez maintenant sélectionner les matériaux et entrer les paramètres pour calculer la charge calorifique et générer les courbes.\n\n👉 Continuez ci-dessous.")
+else:
+    st.stop()
+
+# La suite de l’application (paramètres, calcul, courbe, export) viendra ici...
