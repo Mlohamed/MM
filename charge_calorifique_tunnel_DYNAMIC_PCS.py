@@ -8,7 +8,7 @@ st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="c
 
 st.title("🔥 Calcul de la charge calorifique HRR_STIB V3.1")
 
-# 🔥 Base de données matériaux enrichie avec flux critique
+# Base de données matériaux avec flux critique
 materiaux_info = {
     "Câble PVC": {"pcs": 20, "inflammation": 5, "flux_critique": 20},
     "Câble PE": {"pcs": 40, "inflammation": 4, "flux_critique": 18},
@@ -92,6 +92,7 @@ with st.form("element_form"):
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
+    df["kWh"] = df["Charge calorifique (MJ)"] / 3.6
     df["Équiv. essence (L)"] = (df["Charge calorifique (MJ)"] / 34).round(0).astype(int)
 
     st.subheader("🧮 Résultats")
@@ -108,6 +109,50 @@ if "elements" in st.session_state and st.session_state["elements"]:
     df.to_excel(output, index=False, engine='openpyxl')
     st.download_button("📥 Télécharger Excel", output.getvalue(), "charge_calorifique_tunnel.xlsx")
 
-# Message vide
+    # 📈 Courbe HRR simulée
+    st.subheader("📈 Courbe HRR simulée")
+    duree_totale = st.selectbox("Durée de feu", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
+
+    alpha_choice = st.radio("Vitesse de croissance du feu", [
+        "Lente (α = 0.004 kW/s²)",
+        "Moyenne (α = 0.012 kW/s²)",
+        "Rapide (α = 0.047 kW/s²)",
+        "Ultra-rapide (α = 0.105 kW/s²)"
+    ])
+    alpha_dict = {
+        "Lente (α = 0.004 kW/s²)": 0.004,
+        "Moyenne (α = 0.012 kW/s²)": 0.012,
+        "Rapide (α = 0.047 kW/s²)": 0.047,
+        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
+    }
+    alpha = alpha_dict[alpha_choice]
+
+    t_monte = duree_totale // 3
+    t_plateau = duree_totale // 3
+    t_descente = duree_totale // 3
+
+    t1 = np.linspace(0, t_monte, 200)
+    hrr_monte = alpha * t1**2
+    HRRmax = hrr_monte[-1]
+
+    t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
+    hrr_plateau = np.ones_like(t2) * HRRmax
+    t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
+    hrr_descente = np.linspace(HRRmax, 0, len(t3))
+
+    t_total = np.concatenate([t1, t2, t3])
+    hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
+
+    energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000
+    st.markdown(f"**Puissance max : {HRRmax/1000:.2f} MW** – Énergie ≈ {energie_totale_hrr:.0f} MJ")
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(t_total, hrr_total / 1000, color='purple')
+    ax.set_xlabel("Temps (s)")
+    ax.set_ylabel("HRR (MW)")
+    ax.set_title(f"Courbe HRR ({alpha_choice})")
+    ax.grid(True)
+    st.pyplot(fig)
+
 else:
     st.info("Ajoutez au moins un élément pour afficher les résultats.")
