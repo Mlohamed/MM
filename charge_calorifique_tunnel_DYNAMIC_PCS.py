@@ -1,158 +1,46 @@
-import pandas as pd
 import streamlit as st
-from io import BytesIO
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from fpdf import FPDF
+from io import BytesIO
+import os
 
-st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
+st.set_page_config(page_title="🔥 Calcul de la charge calorifique HRR_STIB", layout="centered")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V3.2")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB V3.1")
-
-# Base de données matériaux avec flux critique
+# Matériaux simplifiés (exemple)
 materiaux_info = {
-    "Câble PVC": {"pcs": 20, "inflammation": 5, "flux_critique": 20},
-    "Câble PE": {"pcs": 40, "inflammation": 4, "flux_critique": 18},
-    "Composite (FRP)": {"pcs": 20, "inflammation": 6, "flux_critique": 16},
-    "Plastique": {"pcs": 35, "inflammation": 4, "flux_critique": 15},
-    "Caoutchouc": {"pcs": 30, "inflammation": 6, "flux_critique": 14},
-    "Bois": {"pcs": 17, "inflammation": 8, "flux_critique": 12},
-    "Panneau OSB": {"pcs": 18, "inflammation": 7, "flux_critique": 11},
-    "Panneau OSB 3": {"pcs": 17, "inflammation": 7, "flux_critique": 11},
-    "Plaque Geproc": {"pcs": 0, "inflammation": 0, "flux_critique": 999},
-    "Polystyrène": {"pcs": 39, "inflammation": 2, "flux_critique": 10},
-    "MDF": {"pcs": 18, "inflammation": 7, "flux_critique": 12},
-    "Gyproc RF (rose)": {"pcs": 1, "inflammation": 10, "flux_critique": 999}
+    "Câble PVC": 20,
+    "Bois": 17,
+    "Polystyrène": 39,
+    "MDF": 18,
+    "Panneau OSB": 17
 }
 
-# Sélection du matériau
-st.subheader("🔍 Sélection du matériau")
-material_list = ["-- Aucun --"] + list(materiaux_info.keys())
-selected_material = st.selectbox("Matériau (avec données par défaut)", material_list)
+# Sélection et ajout
+selected_material = st.selectbox("Matériau", list(materiaux_info.keys()))
+pcs = materiaux_info[selected_material]
+quantite = st.number_input("Quantité", min_value=0.0, step=1.0)
+masse = st.number_input("Masse (kg/unité)", min_value=0.0, step=0.1)
+unite = st.selectbox("Unité", ["m", "m²"])
+if st.button("Ajouter"):
+    st.session_state.setdefault("elements", []).append({
+        "Élément": selected_material,
+        "Unité": unite,
+        "Quantité": quantite,
+        "Masse (kg/unité)": masse,
+        "PCS (MJ/kg)": pcs
+    })
 
-if selected_material != "-- Aucun --":
-    info = materiaux_info[selected_material]
-    st.markdown(f"**PCS :** {info['pcs']} MJ/kg")
-    st.markdown(f"**Flux critique :** {info['flux_critique']} kW/m²")
-    default_pcs = info['pcs']
-    flux_critique = info['flux_critique']
-    default_element_name = selected_material
-else:
-    default_pcs = 0.0
-    flux_critique = 999
-    default_element_name = "Câble électrique"
-
-# Distance et flux thermique
-st.subheader("🌡️ Distance par rapport à la source de chaleur")
-distance_m = st.slider("Distance estimée (m)", 0.5, 5.0, 2.0, step=0.5)
-
-if distance_m <= 1:
-    flux = 30
-elif distance_m <= 2:
-    flux = 20
-elif distance_m <= 3:
-    flux = 12
-else:
-    flux = 8
-
-st.markdown(f"**Flux thermique estimé :** ~ {flux} kW/m²")
-
-# 🔎 Évaluation du risque selon flux critique
-if selected_material != "-- Aucun --":
-    st.subheader("📉 Analyse du risque d'inflammation")
-    if flux >= flux_critique + 10:
-        commentaire = "🔴 Risque élevé d'inflammation"
-    elif flux >= flux_critique + 2:
-        commentaire = "🟠 Risque modéré"
-    elif flux >= flux_critique:
-        commentaire = "🟡 Risque faible"
-    else:
-        commentaire = "🟢 Risque négligeable"
-    st.markdown(f"**Résultat :** {commentaire}")
-
-# Formulaire d'ajout d’élément
-st.subheader("🧾 Ajouter un élément")
-with st.form("element_form"):
-    element = st.text_input("Nom de l'élément", default_element_name)
-    unite = st.selectbox("Unité", ["m", "m²"])
-    quantite = st.number_input("Quantité", min_value=0.0, step=1.0)
-    masse = st.number_input("Masse linéaire/surfacique (kg/unité)", min_value=0.0, step=0.1)
-    pcs = st.number_input("PCS (MJ/kg)", min_value=0.0, step=0.5, value=float(default_pcs))
-    submit = st.form_submit_button("Ajouter")
-
-    if submit and element:
-        st.session_state.setdefault("elements", []).append({
-            "Élément": element,
-            "Unité": unite,
-            "Quantité": quantite,
-            "Masse (kg/unité)": masse,
-            "PCS (MJ/kg)": pcs
-        })
-
-# Résultats
+# Affichage tableau
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
-    df["kWh"] = df["Charge calorifique (MJ)"] / 3.6
     df["Équiv. essence (L)"] = (df["Charge calorifique (MJ)"] / 34).round(0).astype(int)
-
-    st.subheader("🧮 Résultats")
-    st.dataframe(df, use_container_width=True)
 
     total_mj = df["Charge calorifique (MJ)"].sum()
     total_kwh = total_mj / 3.6
     total_l = df["Équiv. essence (L)"].sum()
-    st.markdown(f"**Total énergie : {total_mj:.2f} MJ**")
-    st.markdown(f"**Soit : {total_kwh:.1f} kWh**")
-    st.markdown(f"**Équivalent essence : {total_l} litres**")
 
-    output = BytesIO()
-    df.to_excel(output, index=False, engine='openpyxl')
-    st.download_button("📥 Télécharger Excel", output.getvalue(), "charge_calorifique_tunnel.xlsx")
-
-    # 📈 Courbe HRR simulée
-    st.subheader("📈 Courbe HRR simulée")
-    duree_totale = st.selectbox("Durée de feu", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
-
-    alpha_choice = st.radio("Vitesse de croissance du feu", [
-        "Lente (α = 0.004 kW/s²)",
-        "Moyenne (α = 0.012 kW/s²)",
-        "Rapide (α = 0.047 kW/s²)",
-        "Ultra-rapide (α = 0.105 kW/s²)"
-    ])
-    alpha_dict = {
-        "Lente (α = 0.004 kW/s²)": 0.004,
-        "Moyenne (α = 0.012 kW/s²)": 0.012,
-        "Rapide (α = 0.047 kW/s²)": 0.047,
-        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
-    }
-    alpha = alpha_dict[alpha_choice]
-
-    t_monte = duree_totale // 3
-    t_plateau = duree_totale // 3
-    t_descente = duree_totale // 3
-
-    t1 = np.linspace(0, t_monte, 200)
-    hrr_monte = alpha * t1**2
-    HRRmax = hrr_monte[-1]
-
-    t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
-    hrr_plateau = np.ones_like(t2) * HRRmax
-    t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
-    hrr_descente = np.linspace(HRRmax, 0, len(t3))
-
-    t_total = np.concatenate([t1, t2, t3])
-    hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
-
-    energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000
-    st.markdown(f"**Puissance max : {HRRmax/1000:.2f} MW** – Énergie ≈ {energie_totale_hrr:.0f} MJ")
-
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(t_total, hrr_total / 1000, color='purple')
-    ax.set_xlabel("Temps (s)")
-    ax.set_ylabel("HRR (MW)")
-    ax.set_title(f"Courbe HRR ({alpha_choice})")
-    ax.grid(True)
-    st.pyplot(fig)
-
-else:
-    st.info("Ajoutez au moins un élément pour afficher les résultats.")
+    st.dataframe
