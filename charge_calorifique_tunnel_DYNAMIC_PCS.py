@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB V3.3", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB – V3.3")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V3.4")
 
 # === Base de données des matériaux ===
 materiaux_info = {
