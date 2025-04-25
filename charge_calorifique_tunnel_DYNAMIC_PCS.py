@@ -5,7 +5,7 @@ import numpy as np
 from io import BytesIO
 
 st.set_page_config(page_title="Calcul de la charge calorifique HRR_STIB V3.3", layout="centered")
-st.title("🔥 Calcul de la charge calorifique HRR_STIB – V3.3")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V3.33")
 
 st.markdown("""
 Ce calculateur vous permet :
