@@ -21,7 +21,7 @@ materiaux_info = {
     "Plaque Geproc": {"pcs": 0, "densite": "~10 kg/m²", "combustion": "Non combustible", "hrr": "≈0", "inflammation": 0, "flux_critique": 999},
     "Polystyrène": {"pcs": 39, "densite": "10–20 kg/m³", "combustion": "3–6 min", "hrr": ">1000 kW/m²", "inflammation": 2, "flux_critique": 10},
     "MDF": {"pcs": 18, "densite": "12–14 kg/m²", "combustion": "15–25 min", "hrr": "300–400 kW", "inflammation": 7, "flux_critique": 12},
-    "Gyproc RF (rose)": {"pcs": 0.1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999}
+    "Gyproc RF (rose)": {"pcs": 1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999}
 }
 
 # === Sélection du matériau ===
@@ -137,15 +137,33 @@ if "elements" in st.session_state and st.session_state["elements"]:
     t_total = np.concatenate([t1, t2, t3])
     hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
 
-    energie_totale_hrr = np.trapz(hrr_total, t_total) / 1000
-    st.markdown(f"**Puissance max : {HRRmax/1000:.2f} MW** – Énergie ≈ {energie_totale_hrr:.0f} MJ")
+    # Choix d'affichage de courbes supplémentaires
+    st.subheader("➕ Ajouter des courbes de comparaison")
+    afficher_osb = st.checkbox("Afficher HRR Panneau OSB")
+    afficher_cable = st.checkbox("Afficher HRR Câble")
+    afficher_gyproc = st.checkbox("Afficher HRR Gyproc")
+    afficher_mx = st.checkbox("Afficher HRR Matériel roulant MX (15MW)")
+    afficher_m6m7 = st.checkbox("Afficher HRR Matériel roulant M6/M7 (5MW)")
 
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(t_total, hrr_total / 1000, color='purple')
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(t_total, hrr_total / 1000, label=f"Feu simulé ({alpha_choice})", color='purple')
+
+    if afficher_osb:
+        ax.plot(t_total, np.clip(0.002 * t_total**2, 0, 3), label="Panneau OSB", linestyle='--')
+    if afficher_cable:
+        ax.plot(t_total, np.clip(0.001 * t_total**2, 0, 1.5), label="Câble", linestyle='--')
+    if afficher_gyproc:
+        ax.plot(t_total, np.clip(0.0003 * t_total**2, 0, 0.5), label="Gyproc", linestyle='--')
+    if afficher_mx:
+        ax.plot(t_total, np.clip(0.005 * t_total**2, 0, 15), label="MX (15 MW)", linestyle=':')
+    if afficher_m6m7:
+        ax.plot(t_total, np.clip(0.002 * t_total**2, 0, 5), label="M6/M7 (5 MW)", linestyle=':')
+
     ax.set_xlabel("Temps (s)")
     ax.set_ylabel("HRR (MW)")
-    ax.set_title(f"Courbe HRR ({alpha_choice})")
+    ax.set_title("Courbes HRR comparées")
     ax.grid(True)
+    ax.legend()
     st.pyplot(fig)
 
     # Export Excel
