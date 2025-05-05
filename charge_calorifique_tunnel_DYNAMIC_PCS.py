@@ -6,7 +6,7 @@ from io import BytesIO
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.1 avec HRR cumulative")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.11 avec HRR cumulative")
 
 # === Base de données des matériaux ===
 materiaux_info = {
