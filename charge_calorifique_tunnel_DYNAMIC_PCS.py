@@ -7,21 +7,25 @@ from io import BytesIO
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.1 avec HRR cumulative")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.1")
 
 # === Base de données des matériaux ===
 materiaux_info = {
-    "Câble PVC": {"pcs": 20, "densite": "~1.2 kg/m", "combustion": "4–6 min", "hrr": "300–500 kW", "inflammation": 5, "flux_critique": 20},
-    "Câble PE": {"pcs": 40, "densite": "~1.0 kg/m", "combustion": "4–8 min", "hrr": "400–800 kW", "inflammation": 4, "flux_critique": 18},
-    "Composite (FRP)": {"pcs": 20, "densite": "4–10 kg/m²", "combustion": "10–20 min", "hrr": "600–1000 kW", "inflammation": 6, "flux_critique": 16},
-    "Plastique": {"pcs": 35, "densite": "variable", "combustion": "5–10 min", "hrr": "500–900 kW", "inflammation": 4, "flux_critique": 15},
-    "Caoutchouc": {"pcs": 30, "densite": "variable", "combustion": "10–15 min", "hrr": "500–700 kW", "inflammation": 6, "flux_critique": 14},
-    "Bois": {"pcs": 17, "densite": "8–15 kg/m²", "combustion": "20–30 min", "hrr": "300–500 kW/m²", "inflammation": 8, "flux_critique": 12},
-    "Panneau OSB": {"pcs": 18, "densite": "10 kg/m²", "combustion": "15–25 min", "hrr": "250–400 kW/m²", "inflammation": 7, "flux_critique": 11},
-    "Feu de rame": {"pcs": 25, "densite": "N/A", "combustion": "20–30 min", "hrr": "5–15 MW", "inflammation": 8, "flux_critique": 15}
+    "Câble PVC": {"pcs": 20, "densite": "~1.2 kg/m", "combustion": "4–6 min", "hrr": 400, "inflammation": 5, "flux_critique": 20},
+    "Câble PE": {"pcs": 40, "densite": "~1.0 kg/m", "combustion": "4–8 min", "hrr": 600, "inflammation": 4, "flux_critique": 18},
+    "Composite (FRP)": {"pcs": 20, "densite": "4–10 kg/m²", "combustion": "10–20 min", "hrr": 800, "inflammation": 6, "flux_critique": 16},
+    "Plastique": {"pcs": 35, "densite": "variable", "combustion": "5–10 min", "hrr": 700, "inflammation": 4, "flux_critique": 15},
+    "Caoutchouc": {"pcs": 30, "densite": "variable", "combustion": "10–15 min", "hrr": 600, "inflammation": 6, "flux_critique": 14},
+    "Bois": {"pcs": 17, "densite": "8–15 kg/m²", "combustion": "20–30 min", "hrr": 400, "inflammation": 8, "flux_critique": 12},
+    "Panneau OSB": {"pcs": 18, "densite": "10 kg/m²", "combustion": "15–25 min", "hrr": 350, "inflammation": 7, "flux_critique": 11},
+    "Panneau OSB 3": {"pcs": 17, "densite": "10–12 kg/m²", "combustion": "15–25 min", "hrr": 400, "inflammation": 7, "flux_critique": 11},
+    "Plaque Geproc": {"pcs": 0, "densite": "~10 kg/m²", "combustion": "Non combustible", "hrr": 0, "inflammation": 0, "flux_critique": 999},
+    "Polystyrène": {"pcs": 39, "densite": "10–20 kg/m³", "combustion": "3–6 min", "hrr": 1200, "inflammation": 2, "flux_critique": 10},
+    "MDF": {"pcs": 18, "densite": "12–14 kg/m²", "combustion": "15–25 min", "hrr": 350, "inflammation": 7, "flux_critique": 12},
+    "Gyproc RF (rose)": {"pcs": 0.1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": 0, "inflammation": 10, "flux_critique": 999}
 }
 
-# Sélection
+# === Sélection du matériau ===
 st.subheader("🔍 Sélection du matériau")
 material_list = ["-- Aucun --"] + list(materiaux_info.keys())
 selected_material = st.selectbox("Matériau (avec données par défaut)", material_list)
@@ -31,14 +35,14 @@ if selected_material != "-- Aucun --":
     st.markdown(f"**PCS :** {info['pcs']} MJ/kg")
     st.markdown(f"**Densité type :** {info['densite']}")
     st.markdown(f"**Durée de combustion typique :** {info['combustion']}")
-    st.markdown(f"**HRR max estimé :** {info['hrr']}")
+    st.markdown(f"**HRR max estimé :** {info['hrr']} kW")
     default_pcs = info['pcs']
     default_element_name = selected_material
 else:
     default_pcs = 0.0
     default_element_name = "Câble électrique"
 
-# Distance et flux
+# === Distance et analyse d'inflammation ===
 st.subheader("🌡️ Distance par rapport à la source de chaleur")
 distance_m = st.slider("Distance estimée (m)", 0.5, 5.0, 2.0, step=0.5)
 if distance_m <= 1:
@@ -63,7 +67,7 @@ if selected_material != "-- Aucun --":
         commentaire = "🟢 Risque négligeable"
     st.markdown(f"**Analyse :** {commentaire}")
 
-# Ajout d’éléments
+# === Ajout d’éléments ===
 st.subheader("🧾 Ajouter un élément")
 with st.form("element_form"):
     element = st.text_input("Nom de l'élément", default_element_name)
@@ -81,6 +85,7 @@ with st.form("element_form"):
             "PCS (MJ/kg)": pcs
         })
 
+# === Résultats ===
 if "elements" in st.session_state and st.session_state["elements"]:
     df = pd.DataFrame(st.session_state["elements"])
     df["Charge calorifique (MJ)"] = df["Quantité"] * df["Masse (kg/unité)"] * df["PCS (MJ/kg)"]
@@ -92,50 +97,30 @@ if "elements" in st.session_state and st.session_state["elements"]:
     st.markdown(f"**Total énergie : {total_mj:.2f} MJ**")
     st.markdown(f"**Équivalent essence : {total_l} litres**")
 
-# === HRR cumulative ===
-st.subheader("📈 HRR cumulative – OSB & Feu de rame")
-osb_active = st.checkbox("Intégrer panneau OSB (100 m²)", value=True)
-rame_active = st.checkbox("Intégrer feu de rame de référence", value=True)
+# === HRR cumulative dynamique pour tous matériaux ===
+st.subheader("📈 Comparaison avancée : HRR cumulative pour le matériau sélectionné")
+if selected_material != "-- Aucun --":
+    simuler_hrr = st.checkbox("Simuler la courbe HRR cumulative pour ce matériau", value=True)
+    if simuler_hrr:
+        duree_totale = 1200
+        t = np.linspace(0, duree_totale, 800)
+        hrr_max = info["hrr"] * 1000
+        alpha = hrr_max / (300**2)
+        t_peak = np.sqrt(hrr_max / alpha)
+        hrr = np.where(t < t_peak, alpha * t**2, hrr_max)
+        hrr = np.where(t > t_peak + 300, np.clip(hrr_max * (1 - (t - t_peak - 300)/300), 0, hrr_max), hrr)
 
-duree_totale = 1200
-t = np.linspace(0, duree_totale, 800)
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(t, hrr / 1000, label=f"{selected_material} (max {hrr_max/1000:.1f} kW)", color='crimson')
+        ax.set_xlabel("Temps (s)")
+        ax.set_ylabel("HRR (kW)")
+        ax.set_title("HRR cumulée simulée pour le matériau sélectionné")
+        ax.grid(True)
+        ax.legend()
+        st.pyplot(fig)
 
-def hrr_osb(t):
-    alpha_osb = 0.047
-    t_peak = np.sqrt(10000 / alpha_osb)
-    hrr = np.where(t < t_peak, alpha_osb * t**2, 10000)
-    hrr = np.where(t > t_peak + 300, np.clip(10000 * (1 - (t - t_peak - 300)/300), 0, 10000), hrr)
-    return hrr
-
-def hrr_rame(t):
-    alpha_rame = 0.012
-    t_peak = np.sqrt(7000 / alpha_rame)
-    hrr = np.where(t < t_peak, alpha_rame * t**2, 7000)
-    hrr = np.where(t > t_peak + 400, np.clip(7000 * (1 - (t - t_peak - 400)/400), 0, 7000), hrr)
-    return hrr
-
-hrr_total = np.zeros_like(t)
-fig, ax = plt.subplots(figsize=(10, 6))
-if osb_active:
-    h_osb = hrr_osb(t)
-    ax.plot(t, h_osb / 1000, label="Panneau OSB (max 10 MW)", linestyle='--')
-    hrr_total += h_osb
-if rame_active:
-    h_rame = hrr_rame(t)
-    ax.plot(t, h_rame / 1000, label="Feu rame (max 7 MW)", linestyle=':')
-    hrr_total += h_rame
-if osb_active or rame_active:
-    ax.plot(t, hrr_total / 1000, label="HRR Cumulative", color='black')
-ax.set_title("🔥 Courbes HRR cumulées")
-ax.set_xlabel("Temps (s)")
-ax.set_ylabel("HRR (MW)")
-ax.grid(True)
-ax.legend()
-st.pyplot(fig)
-
-if osb_active or rame_active:
-    df_export = pd.DataFrame({"Temps (s)": t, "HRR Total (kW)": hrr_total})
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_export.to_excel(writer, index=False, sheet_name="HRR cumulée")
-    st.download_button("📥 Télécharger HRR cumulative (Excel)", output.getvalue(), file_name="hrr_cumulative.xlsx")
+        df_export = pd.DataFrame({"Temps (s)": t, "HRR (kW)": hrr / 1000})
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_export.to_excel(writer, index=False, sheet_name="HRR cumulée")
+        st.download_button("📥 Télécharger HRR cumulative (Excel)", output.getvalue(), file_name=f"hrr_{selected_material}.xlsx")
