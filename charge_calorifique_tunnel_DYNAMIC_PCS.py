@@ -6,7 +6,7 @@ from io import BytesIO
 
 st.set_page_config(page_title="Calcul de charge calorifique HRR_STIB", layout="centered")
 
-st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.0")
+st.title("🔥 Calcul de la charge calorifique HRR_STIB – V4.1 avec HRR cumulative")
 
 # === Base de données des matériaux ===
 materiaux_info = {
@@ -21,7 +21,8 @@ materiaux_info = {
     "Plaque Geproc": {"pcs": 0, "densite": "~10 kg/m²", "combustion": "Non combustible", "hrr": "≈0", "inflammation": 0, "flux_critique": 999},
     "Polystyrène": {"pcs": 39, "densite": "10–20 kg/m³", "combustion": "3–6 min", "hrr": ">1000 kW/m²", "inflammation": 2, "flux_critique": 10},
     "MDF": {"pcs": 18, "densite": "12–14 kg/m²", "combustion": "15–25 min", "hrr": "300–400 kW", "inflammation": 7, "flux_critique": 12},
-    "Gyproc RF (rose)": {"pcs": 0.1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999}
+    "Gyproc RF (rose)": {"pcs": 0.1, "densite": "~10 kg/m²", "combustion": "Très résistant", "hrr": "≈0", "inflammation": 10, "flux_critique": 999},
+    "Feu de rame": {"pcs": 25, "densite": "N/A", "combustion": "20–30 min", "hrr": "5–15 MW", "inflammation": 8, "flux_critique": 15},
 }
 
 # === Sélection du matériau ===
@@ -103,83 +104,24 @@ if "elements" in st.session_state and st.session_state["elements"]:
     st.markdown(f"**Total énergie : {total_mj:.2f} MJ**")
     st.markdown(f"**Équivalent essence : {total_l} litres**")
 
-    # === HRR ===
-    st.subheader("📈 Courbe HRR simulée")
-    duree_totale = st.selectbox("Durée de feu", [600, 1200, 1800], format_func=lambda x: f"{x//60} minutes")
+# === Courbe HRR cumulative ===
+st.subheader("📈 HRR cumulative – OSB & Feu de rame")
+duree_totale = 1200
+t = np.linspace(0, duree_totale, 800)
 
-    alpha_choice = st.radio("Vitesse de croissance du feu", [
-        "Lente (α = 0.004 kW/s²)",
-        "Moyenne (α = 0.012 kW/s²)",
-        "Rapide (α = 0.047 kW/s²)",
-        "Ultra-rapide (α = 0.105 kW/s²)"
-    ])
-    alpha_dict = {
-        "Lente (α = 0.004 kW/s²)": 0.004,
-        "Moyenne (α = 0.012 kW/s²)": 0.012,
-        "Rapide (α = 0.047 kW/s²)": 0.047,
-        "Ultra-rapide (α = 0.105 kW/s²)": 0.105
-    }
-    alpha = alpha_dict[alpha_choice]
+def hrr_osb(t):
+    alpha_osb = 0.047
+    t_peak = np.sqrt(10000 / alpha_osb)
+    hrr = np.where(t < t_peak, alpha_osb * t**2, 10000)
+    hrr = np.where(t > t_peak + 300, np.clip(10000 * (1 - (t - t_peak - 300)/300), 0, 10000), hrr)
+    return hrr
 
-    t_monte = duree_totale // 3
-    t_plateau = duree_totale // 3
-    t_descente = duree_totale // 3
+def hrr_rame(t):
+    alpha_rame = 0.012
+    t_peak = np.sqrt(7000 / alpha_rame)
+    hrr = np.where(t < t_peak, alpha_rame * t**2, 7000)
+    hrr = np.where(t > t_peak + 400, np.clip(7000 * (1 - (t - t_peak - 400)/400), 0, 7000), hrr)
+    return hrr
 
-    t1 = np.linspace(0, t_monte, 200)
-    hrr_monte = alpha * t1**2
-    HRRmax = hrr_monte[-1]
-
-    t2 = np.linspace(t_monte, t_monte + t_plateau, 200)
-    hrr_plateau = np.ones_like(t2) * HRRmax
-    t3 = np.linspace(t_monte + t_plateau, duree_totale, 200)
-    hrr_descente = np.linspace(HRRmax, 0, len(t3))
-
-    t_total = np.concatenate([t1, t2, t3])
-    hrr_total = np.concatenate([hrr_monte, hrr_plateau, hrr_descente])
-
-    # Choix d'affichage de courbes supplémentaires
-    st.subheader("➕ Ajouter des courbes de comparaison")
-    afficher_osb = st.checkbox("Afficher HRR Panneau OSB")
-    afficher_cable = st.checkbox("Afficher HRR Câble")
-    afficher_gyproc = st.checkbox("Afficher HRR Gyproc")
-    afficher_mx = st.checkbox("Afficher HRR Matériel roulant MX (15MW)")
-    afficher_m6m7 = st.checkbox("Afficher HRR Matériel roulant M6/M7 (5MW)")
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(t_total, hrr_total / 1000, label=f"Feu simulé ({alpha_choice})", color='purple')
-
-    if afficher_osb:
-        ax.plot(t_total, np.clip(0.002 * t_total**2, 0, 3), label="Panneau OSB", linestyle='--')
-    if afficher_cable:
-        ax.plot(t_total, np.clip(0.001 * t_total**2, 0, 1.5), label="Câble", linestyle='--')
-    if afficher_gyproc:
-        ax.plot(t_total, np.clip(0.0003 * t_total**2, 0, 0.5), label="Gyproc", linestyle='--')
-    if afficher_mx:
-        ax.plot(t_total, np.clip(0.005 * t_total**2, 0, 15), label="MX (15 MW)", linestyle=':')
-    if afficher_m6m7:
-        ax.plot(t_total, np.clip(0.002 * t_total**2, 0, 5), label="M6/M7 (5 MW)", linestyle=':')
-
-    ax.set_xlabel("Temps (s)")
-    ax.set_ylabel("HRR (MW)")
-    ax.set_title("Courbes HRR comparées")
-    ax.grid(True)
-    ax.legend()
-    st.pyplot(fig)
-
-    # Export Excel
-    df_export = pd.DataFrame({
-        "Temps (s)": t_total,
-        "HRR (kW)": hrr_total
-    })
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df_export.to_excel(writer, index=False, sheet_name="Courbe HRR")
-    st.download_button("📥 Télécharger les données HRR (Excel)", output.getvalue(), file_name="courbe_hrr.xlsx")
-
-    # Export PNG
-    img_buffer = BytesIO()
-    fig.savefig(img_buffer, format='png')
-    st.download_button("📸 Télécharger le graphique (PNG)", img_buffer.getvalue(), file_name="courbe_hrr.png")
-
-else:
-    st.info("Ajoutez au moins un élément pour afficher les résultats.")
+osb_active = st.checkbox("Intégrer panneau OSB (100 m²)", value=True)
+r
